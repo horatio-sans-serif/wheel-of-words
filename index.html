@@ -320,6 +320,7 @@
         let sectionHues = [];
         let staticCanvases = [];
         let wheelBitmaps = [];
+        let spinBtnShowTimeout = null;
 
         // --- DOM Elements ---
         const container = document.getElementById("circles-container");
@@ -335,7 +336,16 @@
         renderCircles();
 
         // --- Event Listeners ---
-        spinBtn.onclick = () => { if (!isSpinning) startSpin(); };
+        spinBtn.onclick = () => {
+          if (!isSpinning) {
+            startSpin();
+          } else {
+            if (spinBtnShowTimeout) {
+              clearTimeout(spinBtnShowTimeout);
+              spinBtnShowTimeout = null;
+            }
+          }
+        };
         editBtn.onclick = () => { if (!isEditing) enterEditMode(); };
         // Space bar to spin (if not spinning)
         window.addEventListener('keydown', function (e) {
@@ -540,6 +550,11 @@
         // --- Spin Animation ---
         function startSpin() {
           isSpinning = true;
+          spinBtn.classList.add('hidden');
+          if (spinBtnShowTimeout) {
+            clearTimeout(spinBtnShowTimeout);
+            spinBtnShowTimeout = null;
+          }
           finishedOrder = [];
           answerWords = Array(N).fill("?");
           // Reset all answer word DOM nodes
@@ -607,6 +622,13 @@
             isSpinning = false;
             spinStates = spinStates.map(s => ({ ...s, v: 0, spinning: false }));
             renderCircles();
+            if (spinBtnShowTimeout) {
+              clearTimeout(spinBtnShowTimeout);
+            }
+            spinBtnShowTimeout = setTimeout(() => {
+              spinBtn.classList.remove('hidden');
+              spinBtnShowTimeout = null;
+            }, 5000);
           }
         }
 
