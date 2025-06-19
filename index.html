@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Word Circle Spinner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        color: #eee;
+        font-family: sans-serif;
+        background: radial-gradient(circle at var(--bg-x, 50%) var(--bg-y, 50%), #23222a 0%, #2d2535 60%, #18141e 100%);
+        transition: background 0.2s;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        width: 100vw;
+        box-sizing: border-box;
+      }
+
+      #spin-btn {
+        position: fixed;
+        right: 24px;
+        bottom: 80px;
+        font-size: 2.6em;
+        font-weight: bold;
+        padding: 0.5em 2.5em;
+        border-radius: 2em;
+        background: #313131;
+        color: #fff;
+        border: none;
+        box-shadow: 0 4px 32px #0007;
+        z-index: 1000;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+      }
+
+      #spin-btn:hover {
+        background: #d04848;
+        color: #fff;
+      }
+
+      #edit-btn {
+        position: fixed;
+        top: 18px;
+        right: 24px;
+        font-size: 1.1em;
+        font-weight: bold;
+        padding: 0.3em 1.2em;
+        border-radius: 1em;
+        background: #313131;
+        color: #fff;
+        border: none;
+        box-shadow: 0 2px 12px #0005;
+        z-index: 1001;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+      }
+
+      #edit-btn:hover {
+        background: #d04848;
+        color: #fff;
+      }
+
+      #circles-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        width: 100vw;
+        flex: 1;
+        box-sizing: border-box;
+        gap: 2vw;
+        padding-bottom: 2vw;
+      }
+
+      .circle-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0 0.5em;
+      }
+
+      @media (orientation: portrait) {
+        #circles-container {
+          flex-direction: column;
+        }
+      }
+
+      @media (orientation: landscape) {
+        #circles-container {
+          flex-direction: row;
+        }
+      }
+
+      .circle-svg {
+        display: block;
+        margin: 0 auto;
+        background: transparent;
+        touch-action: none;
+        user-select: none;
+        border-radius: 50%;
+        filter: drop-shadow(0 4px 24px #0008);
+      }
+
+      .edit-section {
+        max-width: 700px;
+        margin: 32px auto;
+        background: #181818;
+        border-radius: 18px;
+        box-shadow: 0 2px 24px #0007;
+        padding: 2em 1em;
+      }
+
+      .edit-list {
+        margin-bottom: 1.6em;
+      }
+
+      .edit-list label {
+        font-weight: bold;
+      }
+
+      .edit-words {
+        max-height: 250px;
+        overflow-y: auto;
+        margin: 10px 0;
+        padding-left: 12px;
+      }
+
+      .edit-word-row {
+        display: flex;
+        align-items: center;
+        gap: 0.6em;
+        margin-bottom: 6px;
+      }
+
+      .edit-word-row input {
+        font-size: 1.2em;
+        padding: 3px 6px;
+        border-radius: 6px;
+        border: 1px solid #555;
+        background: #232323;
+        color: #ffe;
+        flex: 1;
+      }
+
+      .edit-word-row button,
+      .edit-section button,
+      #controls button {
+        font-size: 1em;
+        border-radius: 6px;
+        border: none;
+        background: #313131;
+        color: #eee;
+        padding: 4px 16px;
+        cursor: pointer;
+        margin: 2px;
+        transition: background 0.15s;
+      }
+
+      .edit-word-row button:hover,
+      .edit-section button:hover,
+      #controls button:hover {
+        background: #d04848;
+        color: #fff;
+      }
+
+      .add-btn {
+        background: #388;
+        color: #fff;
+        margin-top: 4px;
+      }
+
+      .add-btn:hover {
+        background: #3ad;
+      }
+
+      .remove-btn {
+        background: #d04848;
+        color: #fff;
+      }
+
+      .remove-btn:hover {
+        background: #a03030;
+      }
+
+      .edit-section input[type="number"] {
+        width: 3em;
+        font-size: 1em;
+        text-align: center;
+        margin-right: 0.5em;
+        border-radius: 6px;
+        border: 1px solid #555;
+        background: #232323;
+        color: #ffe;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .pop {
+        animation: pop 0.3s cubic-bezier(.68, -0.55, .27, 1.55);
+      }
+
+      .circle-group-rect {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2em;
+        padding: 2.5em 2em 2.5em 2em;
+        margin: 1.5em 0.5em;
+        box-shadow: 0 4px 24px #0002;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 340px;
+      }
+
+      .circle-label-rect {
+        background: none;
+        margin-bottom: 2.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 7em;
+        min-height: 2.5em;
+      }
+
+      .circle-label-rect>div {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 2rem;
+        font-weight: bold;
+        text-align: center;
+      }
+
+      .circle-answer-rect {
+        background: none;
+        margin-top: 2.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 7em;
+        min-height: 2.5em;
+      }
+
+      .circle-answer-rect>div {
+        color: #d8d21d;
+        font-size: 2rem;
+        font-weight: bold;
+        text-align: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <button id="edit-btn">EDIT</button>
+    <div id="circles-container"></div>
+    <div id="edit-area" class="hidden"></div>
+    <button id="spin-btn">SPIN</button>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        window.onerror = function (msg, url, line, col, error) {
+          console.log('JS ERROR:', msg, url, line, col, error);
+        };
+        // --- Constants and Utility Functions ---
+        const DEFAULT_WORD_LISTS = [
+          {
+            label: "PROTEIN",
+            words: [
+              "CHICKEN", "BEEF", "PORK", "SALMON", "EGGS", "TURKEY", "FISH"
+            ]
+          },
+          {
+            label: "STARCH",
+            words: [
+              "RICE", "POTATOES", "QUINOA", "SWEET POTATOES", "YAMS", "CORN",
+              "BREAD", "TORTILLA", "PASTA", "BAGEL", "ENGLISH MUFFIN", "SOURDOUGH",
+              "WAFFLE", "PANCAKE", "TATER TOTS", "FRIES", "CHIPS", "TACOS"
+            ]
+          },
+          {
+            label: "SIDE", words: [
+              "CHICKPEAS", "BLACK BEANS", "KIDNEY BEANS", "WHITE BEANS",
+              "BROCCOLI", "SALAD", "AVOCADO", "CHEESE", "OLIVE OIL", "BUTTER", "BEANS", "SPINACH",
+              "CARROTS", "PEAS", "CORN", "ASPARAGUS", "BRUSSELS SPROUTS", "CAULIFLOWER", "ZUCCHINI", "SQUASH",
+              "MUSHROOMS", "ONIONS", "TOMATOES", "CUCUMBER", "BELL PEPPER", "EGGPLANT", "RADISH",
+              "GREEN BEANS", "CABBAGE", "LETTUCE", "ARUGULA", "ROASTED VEGGIES",
+              "APPLESAUCE", "FRUIT SALAD", "HUMMUS", "YOGURT", "GUACAMOLE"
+            ]
+          }
+        ];
+        const STORAGE_KEY = "word-circles-wordlists";
+        const ANIMATION_FPS = 60;
+        const RED = "#f33";
+        const CIRCLE_BG = "#111";
+        const CIRCLE_EDGE = "#888";
+        const CIRCLE_SECTION = "#333";
+        const LETTER_FILL = "#f5f5ed";
+        const TRIANGLE_SIZE = 0.09; // fraction of radius for the base
+        const DAMPING = 0.97; // friction factor per frame after spinup
+        const SPINUP_TIME = 2000; // ms to reach peak spin
+        const SPIN_EPSILON = 0.003; // rad/frame for stopping
+
+        // --- State ---
+        let wordLists = loadWordLists();
+        let N = wordLists.length;
+        let isSpinning = false;
+        let spinStates = [];
+        let answerWords = Array(N).fill("?");
+        let finishedOrder = [];
+        let isEditing = false;
+        let editTmpLists = null;
+        let sectionHues = [];
+        let staticCanvases = [];
+        let wheelBitmaps = [];
+
+        // --- DOM Elements ---
+        const container = document.getElementById("circles-container");
+        const spinBtn = document.getElementById("spin-btn");
+        const editBtn = document.getElementById("edit-btn");
+        const editArea = document.getElementById("edit-area");
+        let circleCanvases = [];
+        let answerDivs = [];
+
+        // --- Init ---
+        computeSectionHues();
+        buildCircleDOM();
+        renderCircles();
+
+        // --- Event Listeners ---
+        spinBtn.onclick = () => { if (!isSpinning) startSpin(); };
+        editBtn.onclick = () => { if (!isEditing) enterEditMode(); };
+        // Space bar to spin (if not spinning)
+        window.addEventListener('keydown', function (e) {
+          if (e.code === 'Space' && !isSpinning && !isEditing) {
+            e.preventDefault();
+            startSpin();
+          }
+        });
+
+        // --- Functions: Core ---
+        function buildCircleDOM() {
+          container.innerHTML = "";
+          circleCanvases = [];
+          answerDivs = [];
+          staticCanvases = [];
+          wheelBitmaps = [];
+          const isPortrait = window.innerHeight >= window.innerWidth;
+          const size = Math.floor(
+            (isPortrait
+              ? window.innerWidth * 1.18
+              : window.innerHeight * 0.88
+            ) / N
+          );
+          const R = Math.max(80, Math.min(340, size));
+          for (let i = 0; i < N; ++i) {
+            const groupRect = document.createElement('div');
+            groupRect.className = 'circle-group-rect';
+            const block = document.createElement('div');
+            block.className = 'circle-block';
+            // Label
+            const labelRect = document.createElement('div');
+            labelRect.className = 'circle-label-rect';
+            const labelDiv = document.createElement('div');
+            labelDiv.textContent = wordLists[i].label || `List ${i + 1}`;
+            labelRect.appendChild(labelDiv);
+            block.appendChild(labelRect);
+            // Circle
+            const canvas = document.createElement('canvas');
+            canvas.className = 'circle-svg';
+            canvas.width = canvas.height = R * 2;
+            canvas.style.width = canvas.style.height = (R * 2) + "px";
+            block.appendChild(canvas);
+            circleCanvases.push(canvas);
+            // Pre-render static wheel to offscreen canvas
+            const staticCanvas = document.createElement('canvas');
+            staticCanvas.width = staticCanvas.height = R * 2;
+            const sctx = staticCanvas.getContext('2d');
+            sctx.save();
+            sctx.translate(R, R);
+            // Circle background
+            sctx.beginPath();
+            sctx.arc(0, 0, R - 2, 0, 2 * Math.PI);
+            sctx.fillStyle = CIRCLE_BG;
+            sctx.fill();
+            sctx.lineWidth = 4;
+            sctx.strokeStyle = CIRCLE_EDGE;
+            sctx.stroke();
+            // Shuffled color sections
+            const words = wordLists[i].words;
+            const J = words.length;
+            const hues = sectionHues[i];
+            for (let j = 0; j < J; ++j) {
+              const startAngle = (j / J) * 2 * Math.PI;
+              const endAngle = ((j + 1) / J) * 2 * Math.PI;
+              sctx.beginPath();
+              sctx.moveTo(0, 0);
+              sctx.arc(0, 0, R - 2, startAngle, endAngle);
+              sctx.closePath();
+              sctx.fillStyle = `hsl(${hues[j]}, 100%, 28%)`;
+              sctx.fill();
+            }
+            sctx.restore();
+            staticCanvases.push(staticCanvas);
+            // Pre-render the entire wheel (sections + all words)
+            const wheelCanvas = document.createElement('canvas');
+            wheelCanvas.width = wheelCanvas.height = R * 2;
+            const wctx = wheelCanvas.getContext('2d');
+            wctx.save();
+            wctx.translate(R, R);
+            // Draw static wheel
+            wctx.drawImage(staticCanvas, -R, -R);
+            // Draw all words
+            for (let j = 0; j < J; ++j) {
+              const word = words[j];
+              const t0 = (j / J) * 2 * Math.PI;
+              const t1 = ((j + 1) / J) * 2 * Math.PI;
+              const theta = (t0 + t1) / 2;
+              const letters = word.split("");
+              const nL = letters.length;
+              const outerR = R * 0.9;
+              const innerR = R * 0.5;
+              const letterGap = 1;
+              const totalLen = outerR - innerR;
+              const step = nL > 1 ? (totalLen - letterGap * (nL - 1)) / (nL - 1) : 0;
+              const minFs = 10;
+              let maxFs = Math.min(24, (totalLen / nL) * 0.7, 60 / Math.sqrt(J));
+              if (maxFs < minFs) maxFs = minFs;
+              for (let k = 0; k < nL; ++k) {
+                const r = outerR - (nL - 1 - k) * (step + letterGap);
+                const t = 1 - k / (nL - 1 || 1);
+                const fs = maxFs - t * (maxFs - minFs);
+                const lx = r * Math.cos(theta);
+                const ly = r * Math.sin(theta);
+                wctx.save();
+                wctx.translate(lx, ly);
+                wctx.rotate(theta + Math.PI / 2 + Math.PI);
+                wctx.font = `${fs}px Verdana, Geneva, Tahoma, sans-serif`;
+                wctx.fillStyle = "rgba(255,255,255,0.9)";
+                wctx.textAlign = "center";
+                wctx.textBaseline = "middle";
+                wctx.fillText(letters[k], 0, 0);
+                wctx.restore();
+              }
+            }
+            wctx.restore();
+            wheelBitmaps.push(wheelCanvas);
+            // Answer
+            const ansRect = document.createElement('div');
+            ansRect.className = 'circle-answer-rect';
+            const ansDiv = document.createElement('div');
+            ansDiv.textContent = answerWords[i] || "?";
+            ansDiv.id = `answer-word-${i}`;
+            ansRect.appendChild(ansDiv);
+            block.appendChild(ansRect);
+            answerDivs.push(ansDiv);
+            groupRect.appendChild(block);
+            container.appendChild(groupRect);
+          }
+        }
+
+        function renderCircles() {
+          const isPortrait = window.innerHeight >= window.innerWidth;
+          const size = Math.floor(
+            (isPortrait
+              ? window.innerWidth * 1.18
+              : window.innerHeight * 0.88
+            ) / N
+          );
+          const R = Math.max(80, Math.min(340, size));
+          for (let i = 0; i < N; ++i) {
+            renderCircleToCanvas(i, R, spinStates[i]?.angle || 0, circleCanvases[i]);
+          }
+        }
+
+        function renderCircleToCanvas(idx, R, angleRad, canvas) {
+          const words = wordLists[idx].words;
+          const J = words.length;
+          const hues = sectionHues[idx];
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          // Draw pre-rendered wheel bitmap, rotated
+          ctx.save();
+          ctx.translate(R, R);
+          ctx.rotate(angleRad);
+          ctx.drawImage(wheelBitmaps[idx], -R, -R);
+          ctx.restore();
+          ctx.save();
+          ctx.translate(R, R);
+          ctx.rotate(angleRad);
+          // Highlight the section at X=0 (right side)
+          const theta0 = 0 - angleRad;
+          let sectionIdx = Math.floor(((theta0 % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI)) / (2 * Math.PI) * J);
+          if (sectionIdx < 0) sectionIdx += J;
+          if (sectionIdx >= J) sectionIdx = 0;
+          const startAngleH = (sectionIdx / J) * 2 * Math.PI;
+          const endAngleH = ((sectionIdx + 1) / J) * 2 * Math.PI;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.arc(0, 0, R - 2, startAngleH, endAngleH);
+          ctx.closePath();
+          ctx.fillStyle = "rgba(255,255,255,0.5)";
+          ctx.fill();
+          ctx.restore();
+          // Draw fixed marker: triangle on right side (not rotated)
+          ctx.save();
+          ctx.translate(R, R);
+          const triOffset = R * 0.10;
+          const triBaseR = R - 2 + triOffset;
+          const triHeight = R * TRIANGLE_SIZE * 1.7;
+          const triTipR = triBaseR - triHeight;
+          const triBaseW = R * TRIANGLE_SIZE * 1.5;
+          ctx.beginPath();
+          ctx.moveTo(triBaseR, -triBaseW / 2);
+          ctx.lineTo(triBaseR, triBaseW / 2);
+          ctx.lineTo(triTipR, 0);
+          ctx.closePath();
+          ctx.fillStyle = RED;
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 1.2;
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // --- Utility ---
+        function sectionArcLength(R, sections) {
+          // Arc length at outer edge of a section
+          return (2 * Math.PI * (R - 15)) / sections;
+        }
+        function degToRad(deg) { return deg * Math.PI / 180; }
+
+        // --- Spin Animation ---
+        function startSpin() {
+          isSpinning = true;
+          finishedOrder = [];
+          answerWords = Array(N).fill("?");
+          // Reset all answer word DOM nodes
+          for (let i = 0; i < N; ++i) {
+            const el = document.getElementById(`answer-word-${i}`);
+            if (el) {
+              el.textContent = "?";
+            }
+          }
+          // Preserve current angles if available
+          let prevAngles = Array(N).fill(0);
+          if (spinStates && spinStates.length === N) {
+            for (let i = 0; i < N; ++i) {
+              prevAngles[i] = spinStates[i]?.angle || 0;
+            }
+          }
+          spinStates = [];
+          for (let i = 0; i < N; ++i) {
+            let peak = (Math.random() * 0.25 + 0.19) * (Math.random() < 0.5 ? 1 : -1);
+            let startAngle = prevAngles[i];
+            spinStates.push({
+              angle: startAngle,
+              v: 0,
+              peak: peak,
+              t: 0,
+              spinning: true,
+              done: false,
+              idx: i
+            });
+          }
+          requestAnimationFrame(spinTick);
+        }
+
+        function spinTick(ts) {
+          let stillSpinning = false;
+          const isPortrait = window.innerHeight >= window.innerWidth;
+          const size = Math.floor(
+            (isPortrait
+              ? window.innerWidth * 1.18
+              : window.innerHeight * 0.88
+            ) / N
+          );
+          const R = Math.max(80, Math.min(340, size));
+          for (let i = 0; i < N; ++i) {
+            let s = spinStates[i];
+            if (!s.spinning) continue;
+            s.t += 1000 / ANIMATION_FPS;
+            // Accelerate to peak for 2s, then apply friction
+            if (s.t < SPINUP_TIME) {
+              s.v = s.peak * (s.t / SPINUP_TIME);
+            } else {
+              s.v *= DAMPING;
+              if (Math.abs(s.v) < SPIN_EPSILON) {
+                s.v = 0; s.spinning = false; s.done = true;
+                onCircleDone(i, s.angle);
+              }
+            }
+            s.angle = (s.angle + s.v) % (2 * Math.PI);
+            stillSpinning = stillSpinning || s.spinning;
+          }
+          renderCircles();
+          if (stillSpinning) {
+            requestAnimationFrame(spinTick);
+          } else {
+            isSpinning = false;
+            spinStates = spinStates.map(s => ({ ...s, v: 0, spinning: false }));
+            renderCircles();
+          }
+        }
+
+        function onCircleDone(i, angle) {
+          const words = wordLists[i].words;
+          const J = words.length;
+          let theta = ((-angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+          let section = Math.floor((theta / (2 * Math.PI)) * J);
+          if (section < 0) section += J;
+          if (section >= J) section = 0;
+          answerWords[i] = words[section];
+          finishedOrder.push(i);
+          if (answerDivs[i]) {
+            answerDivs[i].textContent = words[section];
+          }
+        }
+
+        // --- Edit Mode ---
+        function enterEditMode() {
+          isEditing = true;
+          container.classList.add("hidden");
+          editArea.classList.remove("hidden");
+          spinBtn.disabled = true;
+          editBtn.disabled = true;
+          // Deep copy lists
+          editTmpLists = JSON.parse(JSON.stringify(wordLists));
+          renderEditArea();
+        }
+
+        function exitEditMode(save) {
+          isEditing = false;
+          editArea.classList.add("hidden");
+          container.classList.remove("hidden");
+          spinBtn.disabled = false;
+          editBtn.disabled = false;
+          if (save) {
+            wordLists = editTmpLists
+              .filter(l => l.words.length > 0 && l.words.some(w => w.trim() !== ""))
+              .map(l => ({
+                label: l.label,
+                words: l.words.map(w => (typeof w === 'string' ? w.trim().toUpperCase() : w))
+              }));
+            N = wordLists.length;
+            answerWords = Array(N).fill("?");
+            finishedOrder = [];
+            saveWordLists(wordLists);
+            computeSectionHues();
+          }
+          buildCircleDOM();
+          renderCircles();
+          editTmpLists = null;
+        }
+
+        function renderEditArea() {
+          let html = `
+      <div class="edit-section">
+        <div>
+          <label>Number of Word Lists (1-8):</label>
+          <input type="number" id="edit-num-lists" min="1" max="8" value="${editTmpLists.length}">
+        </div>
+        <div id="edit-lists">
+    `;
+          for (let i = 0; i < editTmpLists.length; ++i) {
+            html += `
+      <div class="edit-list" data-idx="${i}">
+        <label>Label:</label>
+        <input type="text" class="edit-label" data-i="${i}" value="${escapeHtml(editTmpLists[i].label || '')}" style="margin-bottom:6px;max-width:200px;">
+        <div class="edit-words" id="edit-words-${i}">
+      `;
+            for (let j = 0; j < editTmpLists[i].words.length; ++j) {
+              html += `
+          <div class="edit-word-row">
+            <input type="text" value="${escapeHtml(editTmpLists[i].words[j])}" data-i="${i}" data-j="${j}">
+            <button class="remove-btn" data-i="${i}" data-j="${j}">&times;</button>
+          </div>
+        `;
+            }
+            html += `
+          <button class="add-btn" data-i="${i}">+ Add Word</button>
+        </div>
+      </div>
+      `;
+          }
+          html += `
+        </div>
+        <div style="text-align:center; margin-top:18px;">
+          <button id="edit-save-btn">SAVE</button>
+          <button id="edit-cancel-btn">CANCEL</button>
+          <button id="edit-reset-btn">RESET</button>
+        </div>
+      </div>
+    `;
+          editArea.innerHTML = html;
+
+          document.getElementById('edit-num-lists').onchange = function (e) {
+            let newN = Math.max(1, Math.min(8, Number(this.value)));
+            while (editTmpLists.length < newN) editTmpLists.push({ label: '', words: [''] });
+            while (editTmpLists.length > newN) editTmpLists.pop();
+            renderEditArea();
+          };
+
+          // Label input listeners
+          editArea.querySelectorAll('.edit-label').forEach(inp => {
+            inp.oninput = function () {
+              const i = Number(this.dataset.i);
+              editTmpLists[i].label = this.value;
+            };
+          });
+
+          // Add/Remove word buttons and input listeners
+          for (let i = 0; i < editTmpLists.length; ++i) {
+            const wordsDiv = document.getElementById(`edit-words-${i}`);
+            wordsDiv.querySelectorAll('input[type="text"]').forEach(inp => {
+              inp.oninput = function () {
+                const i = Number(this.dataset.i), j = Number(this.dataset.j);
+                editTmpLists[i].words[j] = this.value;
+              };
+            });
+            wordsDiv.querySelectorAll('.remove-btn').forEach(btn => {
+              btn.onclick = function () {
+                const i = Number(this.dataset.i), j = Number(this.dataset.j);
+                editTmpLists[i].words.splice(j, 1);
+                if (editTmpLists[i].words.length === 0) editTmpLists[i].words.push("");
+                renderEditArea();
+              };
+            });
+            wordsDiv.querySelector('.add-btn').onclick = function () {
+              const i = Number(this.dataset.i);
+              editTmpLists[i].words.push("");
+              renderEditArea();
+            };
+          }
+          document.getElementById('edit-save-btn').onclick = () => exitEditMode(true);
+          document.getElementById('edit-cancel-btn').onclick = () => exitEditMode(false);
+          document.getElementById('edit-reset-btn').onclick = () => {
+            editTmpLists = JSON.parse(JSON.stringify(DEFAULT_WORD_LISTS));
+            saveWordLists(editTmpLists);
+            exitEditMode(true);
+          };
+        }
+
+        // --- Storage ---
+        function loadWordLists() {
+          let data = localStorage.getItem(STORAGE_KEY);
+          if (data) {
+            try {
+              let lists = JSON.parse(data);
+              if (Array.isArray(lists) && lists.length && lists.every(l => typeof l === 'object' && Array.isArray(l.words))) {
+                // Defensive: ensure all words are strings and uppercased
+                return lists.map(l => ({
+                  label: l.label,
+                  words: Array.isArray(l.words)
+                    ? l.words.map(w => (typeof w === 'string' ? w.trim().toUpperCase() : ''))
+                    : []
+                })).filter(l => l.words.length > 0 && l.words.some(w => w));
+              }
+            } catch (e) {
+              // Ignore and fall through to default
+            }
+          }
+          return JSON.parse(JSON.stringify(DEFAULT_WORD_LISTS));
+        }
+        function saveWordLists(lists) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(lists));
+        }
+
+        // --- Utility ---
+        function escapeHtml(s) {
+          return s.replace(/[&<>"']/g, function (c) {
+            return ({
+              '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[c];
+          });
+        }
+
+        // --- Responsive Redraw ---
+        window.addEventListener('resize', function () {
+          if (!isEditing) {
+            buildCircleDOM();
+            renderCircles();
+          }
+        });
+
+        function computeSectionHues() {
+          sectionHues = [];
+          for (let i = 0; i < wordLists.length; ++i) {
+            const words = wordLists[i].words;
+            const J = words.length;
+            const hueOffset = (i * 137.508) % 360;
+            let hues = [];
+            for (let j = 0; j < J; ++j) hues.push((hueOffset + (j / J) * 360) % 360);
+            // Shuffle hues for this list
+            for (let k = J - 1; k > 0; --k) {
+              const l = Math.floor(Math.random() * (k + 1));
+              [hues[k], hues[l]] = [hues[l], hues[k]];
+            }
+            sectionHues.push(hues);
+          }
+        }
+      }); // end DOMContentLoaded
+    </script>
+  </body>
+
+</html>
