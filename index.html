@@ -964,6 +964,10 @@
 
           const hash = getOrCreateHash();
           const encryptedData = simpleEncrypt(wordLists, hash);
+          
+          console.log('Hash:', hash);
+          console.log('Word lists:', wordLists);
+          console.log('Encrypted data:', encryptedData);
 
           if (!encryptedData) {
             showStatus('Failed to encrypt data', 3000);
@@ -971,16 +975,19 @@
           }
 
           try {
+            const payload = {
+              action: 'save',
+              id: hash,
+              data: encryptedData
+            };
+            console.log('Sending payload:', payload);
+            
             const response = await fetch(VALTOWN_ENDPOINT, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({
-                action: 'save',
-                id: hash,
-                data: encryptedData
-              })
+              body: JSON.stringify(payload)
             });
 
             if (response.ok) {
