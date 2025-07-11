@@ -1,6 +1,7 @@
 // Val.town endpoint for Wheel of Words storage
 // Deploy this as a val at https://www.val.town/
 // Name it: wheelOfWordsStorage
+// IMPORTANT: This must be an HTTP val!
 
 export default async function(req: Request): Promise<Response> {
   // Enable CORS for all responses
