@@ -3,11 +3,15 @@
 // Name it: wheelOfWordsStorage
 
 export default async function(req: Request): Promise<Response> {
-  // Enable CORS
-  const headers = {
+  // Enable CORS for all responses
+  const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Accept",
+  };
+  
+  const headers = {
+    ...corsHeaders,
     "Content-Type": "application/json",
   };
 
