@@ -908,28 +908,46 @@
         }
 
         function simpleEncrypt(data, key) {
-          // Simple XOR encryption for small data
-          const jsonStr = JSON.stringify(data);
-          const compressed = LZString.compressToBase64(jsonStr);
-          let encrypted = '';
-          for (let i = 0; i < compressed.length; i++) {
-            encrypted += String.fromCharCode(compressed.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+          try {
+            // Simple XOR encryption for small data
+            const jsonStr = JSON.stringify(data);
+            const compressed = LZString.compressToBase64(jsonStr);
+            // Use a safer approach that doesn't create invalid unicode
+            const keyHash = Array.from(key).reduce((a, b) => a + b.charCodeAt(0), 0);
+            const encrypted = compressed.split('').map((char, i) => {
+              const charCode = char.charCodeAt(0);
+              const keyCode = key.charCodeAt(i % key.length);
+              return String.fromCharCode((charCode + keyCode + keyHash) % 256);
+            }).join('');
+            return btoa(unescape(encodeURIComponent(encrypted)));
+          } catch (e) {
+            console.error('Encryption error:', e);
+            // Fallback: just compress without encryption
+            return LZString.compressToBase64(JSON.stringify(data));
           }
-          return btoa(encrypted);
         }
 
         function simpleDecrypt(encryptedData, key) {
           try {
-            const decoded = atob(encryptedData);
-            let decrypted = '';
-            for (let i = 0; i < decoded.length; i++) {
-              decrypted += String.fromCharCode(decoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-            }
+            // Try to decrypt
+            const decoded = decodeURIComponent(escape(atob(encryptedData)));
+            const keyHash = Array.from(key).reduce((a, b) => a + b.charCodeAt(0), 0);
+            const decrypted = decoded.split('').map((char, i) => {
+              const charCode = char.charCodeAt(0);
+              const keyCode = key.charCodeAt(i % key.length);
+              return String.fromCharCode((charCode - keyCode - keyHash + 256) % 256);
+            }).join('');
             const decompressed = LZString.decompressFromBase64(decrypted);
             return JSON.parse(decompressed);
           } catch (e) {
-            console.error('Decryption error:', e);
-            return null;
+            // Fallback: try without encryption
+            try {
+              const decompressed = LZString.decompressFromBase64(encryptedData);
+              return JSON.parse(decompressed);
+            } catch (e2) {
+              console.error('Decryption error:', e, e2);
+              return null;
+            }
           }
         }
 
