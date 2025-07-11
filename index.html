@@ -323,7 +323,7 @@
         };
         // --- Constants and Utility Functions ---
         // Val.town endpoint - you'll need to create this val
-        const VALTOWN_ENDPOINT = 'https://oldyeller.val.run/wheelOfWordsStorage';
+        const VALTOWN_ENDPOINT = 'https://oldyeller--e2f5ea065e6d11f09f480224a6c84d84.web.val.run';
 
         const DEFAULT_WORD_LISTS = [
           {
@@ -942,10 +942,7 @@
         }
 
         async function saveToShare() {
-          if (VALTOWN_ENDPOINT.includes('YOUR_USERNAME')) {
-            showStatus('Please update line 326 with your val.town username', 5000);
-            return;
-          }
+          // Endpoint is now configured
 
           const hash = getOrCreateHash();
           const encryptedData = simpleEncrypt(wordLists, hash);
@@ -995,10 +992,7 @@
             return;
           }
 
-          if (VALTOWN_ENDPOINT.includes('YOUR_USERNAME')) {
-            showStatus('Please set your val.town endpoint in the code', 5000);
-            return;
-          }
+          // Endpoint is now configured
 
           try {
             const response = await fetch(VALTOWN_ENDPOINT, {

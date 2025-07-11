@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Wheel of Words - GitHub Gist Storage</title>
+    <script>
+        // Simple implementation using GitHub Gists for storage
+        // This works without CORS issues and is completely free
+        
+        async function saveToGist() {
+            const hash = window.location.hash.substring(1) || Math.random().toString(36).substring(2, 12);
+            window.location.hash = hash;
+            
+            const data = {
+                lists: [
+                    { label: "PROTEIN", words: ["CHICKEN", "BEEF", "PORK"] },
+                    { label: "STARCH", words: ["RICE", "POTATOES", "BREAD"] }
+                ],
+                timestamp: new Date().toISOString()
+            };
+            
+            // Create a public gist (no auth needed for public gists)
+            const response = await fetch('https://api.github.com/gists', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    description: `wheel-of-words-${hash}`,
+                    public: false, // unlisted gist
+                    files: {
+                        'data.json': {
+                            content: JSON.stringify(data)
+                        }
+                    }
+                })
+            });
+            
+            if (response.ok) {
+                const gist = await response.json();
+                // Store the gist ID in localStorage with the hash as key
+                localStorage.setItem(`gist-${hash}`, gist.id);
+                console.log('Saved! Gist ID:', gist.id);
+                console.log('Share URL:', window.location.href);
+            }
+        }
+        
+        async function loadFromGist() {
+            const hash = window.location.hash.substring(1);
+            if (!hash) return;
+            
+            // Get gist ID from localStorage
+            const gistId = localStorage.getItem(`gist-${hash}`);
+            if (!gistId) {
+                console.log('No data found for this hash');
+                return;
+            }
+            
+            const response = await fetch(`https://api.github.com/gists/${gistId}`);
+            if (response.ok) {
+                const gist = await response.json();
+                const data = JSON.parse(gist.files['data.json'].content);
+                console.log('Loaded:', data);
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>GitHub Gist Storage Test</h1>
+    <button onclick="saveToGist()">Save to Gist</button>
+    <button onclick="loadFromGist()">Load from Gist</button>
+    <p>This demonstrates using GitHub Gists for free storage without CORS issues.</p>
+</body>
+</html>
